@@ -1,0 +1,13 @@
+# ignore bin directories
+bin/
+
+#ignore build directories
+build/
+
+#ignore war directories
+war/
+
+#ignore dist directories
+dist/
+
+WebContent/WEB-INF/lib/smt_demolinkedtvapp.jar

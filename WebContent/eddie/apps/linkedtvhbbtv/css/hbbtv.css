@@ -1,0 +1,41 @@
+/* copied from CWI news case scenario */
+
+#overlay {
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background: none repeat scroll 0 0 white;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+    border-color: -moz-use-text-color black black;
+    border-image: none;
+    border-right: 1px solid black;
+    border-style: none solid solid;
+    border-width: medium 1px 1px;
+    box-shadow: 0 3px 5px rgba(50, 50, 50, 0.75);
+    height: 270px;
+    left: 5%;
+    min-width: 215px;
+    padding: 10px;
+    position: absolute;
+    text-align: center;
+    top: 20px;
+}
+#overlay img {
+    display: block;
+    height: 150px;
+    margin: 0 auto 6px;
+    width: 150px;
+}
+#overlay p {
+    margin: 6px 0 11px;
+}
+#overlay #code {
+    font-size: 14pt;
+    font-weight: bold;
+}
+#overlay #toggle:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}

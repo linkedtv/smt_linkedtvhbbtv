@@ -1,0 +1,16 @@
+<fsxml>
+	<binding id="1">
+		<properties>
+			<events>swipe drag dragstart dragend doubletap</events>
+			<function>components.sliderevents.sliderHeaderHandler</function>
+			<elements>.sliderheader</elements>
+		</properties>
+	</binding>
+	<binding id="2">
+		<properties>
+			<events>drag dragstart dragend doubletap mousewheel swipe release</events>
+			<function>components.sliderevents.sliderHandler</function>
+			<elements>.slider</elements>
+		</properties>
+	</binding>
+</fsxml>

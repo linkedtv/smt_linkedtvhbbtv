@@ -1,0 +1,9 @@
+<fsxml>
+	<binding id="1">
+		<properties>
+			<elements>.button,.dragblock</elements>
+			<events>swipe drag dragstart dragend tap doubletap hold</events>
+			<function>components.tablet.putMsg</function>
+		</properties>
+	</binding>
+</fsxml>

@@ -1,0 +1,9 @@
+<fsxml>
+	<binding id="1">
+		<properties>
+			<elements>.screensbutton</elements>
+			<events>tap</events>
+			<function>components.tablet.putMsg</function>
+		</properties>
+	</binding>
+</fsxml>
