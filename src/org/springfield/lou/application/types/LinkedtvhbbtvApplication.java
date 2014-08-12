@@ -35,17 +35,13 @@ import org.springfield.lou.application.components.BasicComponent;
 import org.springfield.lou.application.components.ComponentInterface;
 import org.springfield.lou.application.types.demolinkedtv.Slider;
 import org.springfield.fs.*;
-import org.springfield.lou.homer.LazyHomer;
 import org.springfield.lou.screen.Capabilities;
 import org.springfield.lou.screen.Screen;
 import org.springfield.lou.tools.FsFileReader;
 import org.springfield.lou.user.User;
 import org.springfield.mojo.http.HttpHelper;
-import org.springfield.mojo.http.Response;
-import org.springfield.mojo.interfaces.ServiceInterface;
-import org.springfield.mojo.interfaces.ServiceManager;
-import org.springfield.mojo.linkedtv.Channel;
 import org.springfield.mojo.linkedtv.Episode;
+import org.springfield.mojo.linkedtv.GAIN;
 
 /**
  * LinkedTV HbbTV application based on LinkedTV Demo Application.
@@ -66,27 +62,32 @@ import org.springfield.mojo.linkedtv.Episode;
  * 
  */
 public class LinkedtvhbbtvApplication extends Html5Application {
+	private static String GAIN_ACCOUNT = "LINKEDTV-TEST";
 	
-	private String presentationCollectionUri = "/domain/linkedtv/user/rbb/collection/default/presentation/249";
-	// private String presentationCollectionUri = "/domain/linkedtv/user/rbb/collection/default/presentation/1621";
-	private Presentation presentation = null;
+	private Episode episode;
+	private GAIN gain;
+	
 	public FsTimeLine timeline = null;
 	private enum sliders { whoslider,whatslider,whereslider,chapterslider,bookmarkslider,sharedslider, joinedslider; }
 	private enum blocks { who,what,where,chapter; }
 	private boolean curated = false;
 	private int currentChapter = -1;
 	private long currentTime = 0l;
-	private String mediaresourceUUID = "";
 	private boolean hbbtvMode = false; 
-	private Episode e = null;
 	
 	public LinkedtvhbbtvApplication(String id) {
 		super(id); 
+		gain = new GAIN(GAIN_ACCOUNT, id);
+		gain.application_new();
+		
 		System.out.println("LINKEDTVHBBTV APPLICATION STARTED");
 	}
 	
 	public LinkedtvhbbtvApplication(String id, String remoteReceiver) {
 		super(id, remoteReceiver); 
+		
+		gain = new GAIN(GAIN_ACCOUNT, id);
+		gain.application_new();
 		System.out.println("LINKEDTVHBBTV APPLICATION STARTED 2");
 	}
 	
@@ -96,118 +97,60 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	 * @param s - screen
 	 */
 	public void onNewScreen(Screen s) {
+		episode = new Episode(s.getParameter("id"));
 		String fixedrole = s.getParameter("role");
+		
+		this.curated = s.getParameter("curated") == null ? false : true;
+		
 		// so we want to load based on device type
 		Capabilities caps = s.getCapabilities();
 		String dstyle = caps.getDeviceModeName();
-
+		
+		gain.screen_new(s.getId());
+		
 		// try to load special style first if not fallback.
 		loadStyleSheet(s,"animate");
-		loadStyleSheet(s,"generic");
-		loadStyleSheet(s,"terms");
-		// Do we already have a screen in the application that claims to be a mainscreen ?
-		if (screenmanager.hasRole("mainscreen") && (fixedrole==null || !fixedrole.equals("mainscreen"))) {
+		loadStyleSheet(s, dstyle);
+		
+		if (caps.getDeviceMode() == caps.MODE_HBBTV) {
+			// this is the HbbTV main screen
+			this.hbbtvMode = true;
+			
+			// reset for screens that might have run in the past?
+			currentTime = 0l;	
+			
+			s.setRole("mainscreen");
+			loadMainScreen(s);			
+		} else if (screenmanager.hasRole("mainscreen") && (fixedrole == null || !fixedrole.equals("mainscreen"))) {
+			// Do we already have a screen in the application that claims to be a mainscreen ?
 			System.out.println("Second screen");
 			loadSecondScreen(s);
-			if (s.getParameter("curated") != null) {
-				//curated version requested
-				System.out.println("curated version");
-				if (this.curated == false) {
-					if (timeline == null) {
-						timeline = new FsTimeLine();
-					}
-					timeline.removeNodes();
-					FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", presentation.getMediaResourceId(), presentation.getVideoUri(), presentation.getImageUri(), true);
-					timeline.addNodes(tags.getAllNodes());					
+			
+			if (this.curated == true) {
+				if (timeline == null) {
+					timeline = new FsTimeLine();
 				}
-				this.curated = true;
+				timeline.removeNodes();
+				FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", episode.getMediaResourceId(), episode.getStreamUri(), episode.getStillsUri(), true);
+				timeline.addNodes(tags.getAllNodes());					
 			} else {
-				//non curated version requested
-				System.out.println("non curated version");
-				if (this.curated == true) {
-					if (timeline == null) {
-						timeline = new FsTimeLine();
-					}
-					timeline.removeNodes();
-					FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", presentation.getMediaResourceId(), presentation.getVideoUri(), presentation.getImageUri(), false);
-					timeline.addNodes(tags.getAllNodes());
+				if (timeline == null) {
+					timeline = new FsTimeLine();
 				}
-				this.curated = false;
-			}
+				timeline.removeNodes();
+				FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", episode.getMediaResourceId(), episode.getStreamUri(), episode.getStillsUri(), false);
+				timeline.addNodes(tags.getAllNodes());
+			}				
 		} else {
 			// this is the main screen
 			// reset for screens that might have run in the past?
-			currentTime = 0l;
+			currentTime = 0l;			
 			
-			if(s.getParameter("presentation") != null){
-				this.presentationCollectionUri = s.getParameter("presentation");
-			} else if (s.getParameter("uuid") != null){
-				this.mediaresourceUUID = s.getParameter("uuid");
-				e = new Episode(mediaresourceUUID); 
-				this.presentationCollectionUri = e.getStreamUri();
-			}
-			if (s.getParameter("curated") != null) {
-				this.curated = true;
-			}
-			
-			System.out.println("Main screen presentation uri = "+this.presentationCollectionUri);
+			System.out.println("Main screen presentation uri = "+episode.getPresentationId());
 			s.setRole("mainscreen");
 			loadMainScreen(s);			
 		}
-		
-		if (s.getParameter("id") != null) {
-			if (e == null) {
-				e = new Episode(s.getParameter("id"));
-			}
-			System.out.println("Title: "+e.getTitle());
-			System.out.println("Duration: "+e.getDuration());
-			System.out.println("Stills uri: "+e.getStillsUri());
-			System.out.println("Stream uri: "+e.getStreamUri());
-			System.out.println("Presentation: "+e.getPresentationId());
-			
-			//FSList annotations = e.getAnnotations();
-			//List<FsNode> locations = annotations.getNodesByName("location");
 
-			//get chapters
-			FSList chaptersList = e.getChapters();
-			int size = chaptersList.size();
-			//if we have some chapters
-			System.out.println("Number of chapters: "+size);
-			if (size > 0) {
-				List<FsNode> chapters = chaptersList.getNodes();	
-				for (FsNode chapter : chapters) {					
-					FSList annotationsList = e.getAnnotationsFromChapter(chapter); 
-					List<FsNode> annotations = annotationsList.getNodes();
-										
-					String chapterTitle = chapter.getProperty("title");
-					System.out.println("Chapter title : "+chapterTitle);
-						
-					for (FsNode annotation : annotations) {							
-						System.out.println("annotation : "+annotation.getProperty("title")+"(start: "+annotation.getProperty("starttime")+" duration: "+annotation.getProperty("duration")+")");
-						
-						FSList enrichmentsList = e.getEnrichmentsFromAnnotation(annotation);
-						List<FsNode> enrichments = enrichmentsList.getNodes();
-						for (FsNode enrichment : enrichments) {
-							System.out.println("enrichment : "+enrichment.getProperty("locator"));
-						}						
-					}
-				}
-			}
-		}
-		/*if (s.getParameter("provider") != null) {
-			Channel c = new Channel("linkedtv", s.getParameter("provider"));
-			List<Episode> episodes = c.getEpisodes();
-			System.out.println("size of channel: "+episodes.size());
-			
-			Episode e = c.getLatestEpisode();
-			
-			System.out.println("Id: "+e.getMediaResourceId());
-			System.out.println("Title: "+e.getTitle());
-			System.out.println("Duration: "+e.getDuration());
-			System.out.println("Stills uri: "+e.getStillsUri());
-			System.out.println("Stream uri: "+e.getStreamUri());
-		}*/
-		
 		loadContent(s, "notification");
 	}
 	
@@ -217,23 +160,22 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	 * @param s - the main screen
 	 */
 	private void loadMainScreen(Screen s) {
-		presentation = new Presentation(presentationCollectionUri);
 		// switch between HTML5 version and HbbTV version
 		if (hbbtvMode == false) {
 			loadContent(s, "video");
 			// loadContent(s, "connectinfo");
 			// loadContent(s, "logo");
 			// loadContent(s, "terms");
-			this.componentmanager.getComponent("video").put("app", "setVideo("+ presentation.getVideoUri() +"/rawvideo/3/raw.mp4)");
-			this.componentmanager.getComponent("video").put("app", "setPoster("+ presentation.getImageUri() +"/h/0/m/0/sec1.jpg)");
+			this.componentmanager.getComponent("video").put("app", "setVideo("+ episode.getStreamUri() +")");
+			this.componentmanager.getComponent("video").put("app", "setPoster("+ episode.getStillsUri() +"/h/0/m/0/sec1.jpg)");
 			// s.putMsg("terms", "", "show()");
 			// s.putMsg("logo", "", "broadcaster(" +presentation.getUser()+")");
 		} else {
 			loadContent(s, "hbbtvvideo");
-			this.componentmanager.getComponent("hbbtvvideo").put("app", "setVideo("+ presentation.getVideoUri() +"/rawvideo/3/raw.mp4)");
-			this.componentmanager.getComponent("hbbtvvideo").put("app", "setPoster("+ presentation.getImageUri() +"/h/0/m/0/sec1.jpg)");
-		}
-		
+			this.componentmanager.getComponent("hbbtvvideo").put("app", "setVideo("+ episode.getStreamUri() +")");
+			//this.componentmanager.getComponent("hbbtvvideo").put("app", "setPoster("+ episode.getStillsUri() +"/h/0/m/0/sec1.jpg)");
+			this.componentmanager.getComponent("hbbtvvideo").put("app", "play()");
+		}		
 	}
 	
 	/**
@@ -258,6 +200,9 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	 */
 	public void onNewUser(Screen s,String name) {
 		super.onNewUser(s, name);
+		
+		gain.user_login(name, s.getId());
+		
 		String body = Slider.loadDataJoined(this,timeline);
 		ComponentInterface comp = getComponentManager().getComponent("joinedslider");
 		if (comp!=null) {
@@ -276,6 +221,9 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	 */
 	public void onLogoutUser(Screen s,String name) {
 		super.onLogoutUser(s, name);
+		
+		gain.user_logout(name, s.getId());
+		
 		String body = Slider.loadDataJoined(this,timeline);
 		ComponentInterface comp = getComponentManager().getComponent("joinedslider");
 		if (comp!=null) {
@@ -360,7 +308,7 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	private void handleLoadData(Screen s,String content) {
 		if (timeline==null) {
 			timeline = new FsTimeLine();
-			FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", presentation.getMediaResourceId(), presentation.getVideoUri(), presentation.getImageUri(), this.curated);
+			FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", episode.getMediaResourceId(), episode.getStreamUri(), episode.getStillsUri(), this.curated);
 			timeline.addNodes(tags.getAllNodes());
 		}
 
@@ -413,6 +361,9 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	 */
 	private void handleLoadBlockData(Screen s,String content) {
 		String params[] = content.split(",");		
+		
+		gain.user_select(s.getUserName(), params[1], s.getId());
+		
 		String type = params[0].substring(0,params[0].indexOf("_"));
 		String uid = params[1].substring(params[1].lastIndexOf("/")+1);
 		String orientation = params[2];
@@ -440,7 +391,8 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 			if (enrichments.size() == 1) {
 				body += "<iframe id=\"ext_inf\" src=\""+enrichments.get(0).valueOf("properties/locator")+"\"></iframe>";
 			} else {			
-				String lang = presentation.getLanguage();
+				//String lang = presentation.getLanguage();
+				String lang = "de";
 				body += "<iframe id=\"ext_inf\" src=\"http://"+lang+".wikipedia.org/wiki/"+entity+"\"></iframe>";
 			}
 		} else {
@@ -485,7 +437,7 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		if (timeline==null) {
 			System.out.println("Timeline is empty, make new one");
 			timeline = new FsTimeLine();
-			FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", presentation.getMediaResourceId(), presentation.getVideoUri(), presentation.getImageUri(), this.curated);
+			FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", episode.getMediaResourceId(), episode.getStreamUri(), episode.getStillsUri(), this.curated);
 			timeline.addNodes(tags.getAllNodes());
 		}
 		
@@ -613,7 +565,8 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		}
 		this.addComponentToScreen(sliderComponent, s);
 
-		sliderComponent.put("app", "setlanguage("+presentation.getLanguage()+")");
+		//sliderComponent.put("app", "setlanguage("+presentation.getLanguage()+")");
+		sliderComponent.put("app", "setlanguage(de)");
 	}
 	
 	/**
@@ -809,167 +762,6 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		body += "</td></tr><tr><tr><td><div class=\"fakeuser\" id=\"user_nina\"><p>Nina</p><img src=\"/eddie/img/people/nina.png\"></div></td></tr></table>";
 		s.putMsg("tablet","app", "fakeusershtml("+body+")");
 		s.loadScript("tablet", "tablet/fakeuserevents.js", this);
-	}
-}
-
-/**
- * Presentation class to load data from the file system 
- * 
- * @author Pieter van Leeuwen
- * @copyright Copyright: Noterik B.V. 2013
- * @package org.springfield.lou.application.types
- *
- */
-final class Presentation {
-	private String uri;
-	private String presentationUri;
-	private String videoUri;
-	private String imageUri;
-	private String mount;
-	private String mediaResourceId;
-	
-	/**
-	 * Create new presentation from the given uri
-	 * 
-	 * @param uri - the uri of the presentation
-	 */
-	public Presentation(String uri) {
-		this.uri = uri;
-		loadProject();
-	}
-	
-	/**
-	 * Get video uri
-	 * 
-	 * @return the video uri
-	 */
-	public String getVideoUri() {
-		return "http://"+mount+".noterik.com/progressive/"+mount+videoUri;
-	}
-	
-	/**
-	 * Get the image uri for this presentation
-	 * 
-	 * @return - the image uri
-	 */
-	public String getImageUri() {
-		return imageUri;
-	}
-	
-	/**
-	 * Get the media resource id
-	 * 
-	 * @return - the media resource id
-	 */
-	public String getMediaResourceId() {
-		return mediaResourceId;
-	}
-	
-	/**
-	 * Get the user from the uri
-	 * 
-	 * @return - the user from the uri
-	 */
-	public String getUser() {
-		return uri.substring(uri.indexOf("/user/")+6, uri.indexOf("/collection/"));
-	}
-	
-	/**
-	 * Load project
-	 */
-	private void loadProject() {
-		if (loadCollectionPresentation()) {
-			if (loadPresentation()) {
-				loadVideo();
-			}
-		}
-	}
-	
-	/**
-	 * Load the collection presentation from the file system
-	 * 
-	 * @return true if everything went ok, otherwise false
-	 */
-	private boolean loadCollectionPresentation() {
-		ServiceInterface smithers = ServiceManager.getService("smithers");
-		if (smithers==null) return false;
-		//String data = LazyHomer.sendRequestBart("GET", uri, null, null);
-		String data = smithers.get(uri, null, null);
-		try {
-			Document response = DocumentHelper.parseText(data);
-			String presentationUri = response.selectSingleNode("//presentation/@referid") == null ? "" : response.selectSingleNode("//presentation/@referid").getText();
-			this.presentationUri = presentationUri;
-			return true;
-		} catch (Exception e) {
-			System.out.println("ERROR: loading collection failed");
-			e.printStackTrace();
-			return false;
-		}
-	}
-	
-	/**
-	 * Load the presentation from the file system
-	 * 
-	 * @return true if everything went ok, otherwise false
-	 */
-	private boolean loadPresentation() {
-		ServiceInterface smithers = ServiceManager.getService("smithers");
-		if (smithers==null) return false;
-		//String data = LazyHomer.sendRequestBart("GET", presentationUri, null, null);
-		// String data = smithers.get(presentationUri, null, null);
-		String data = smithers.get(presentationUri, "<fsxml><properties><depth>2</depth></properties></fsxml>", "text/xml");
-		try {
-			Document response = DocumentHelper.parseText(data);
-			String videoUri = response.selectSingleNode("//videoplaylist[@id='1']/video[@id='1']/@referid") == null ? "" : response.selectSingleNode("//videoplaylist[@id='1']/video[@id='1']/@referid").getText();
-			String mediaResourceId = response.selectSingleNode("//properties/media_resource_id") == null ? "" : response.selectSingleNode("//properties/media_resource_id").getText();
-			
-			this.videoUri = videoUri;
-			this.mediaResourceId = mediaResourceId;
-			return true;
-		} catch (Exception e) {
-			System.out.println("ERROR: loading presentation failed");
-			e.printStackTrace();
-			return false;
-		}
-	}
-	
-	/**
-	 * Load the video from the file system
-	 * 
-	 * @return true if everything went ok, otherwise false
-	 */
-	private boolean loadVideo() {
-		ServiceInterface smithers = ServiceManager.getService("smithers");
-		if (smithers==null) return false;
-		//String data = LazyHomer.sendRequestBart("GET", videoUri, null, null);
-		String data = smithers.get(videoUri, null, null);
-		try {
-			Document response = DocumentHelper.parseText(data);
-			String imageUri = response.selectSingleNode("//screens[@id='1']/properties/uri") == null ? "" : response.selectSingleNode("//screens[@id='1']/properties/uri").getText();
-			String mount = response.selectSingleNode("//rawvideo[@id='1']/properties/mount") == null ? "" : response.selectSingleNode("//rawvideo[@id='1']/properties/mount").getText();
-			mount = mount.substring(0, mount.indexOf(","));
-			
-			this.imageUri = imageUri;
-			this.mount = mount;
-			return true;
-		} catch (Exception e) {
-			System.out.println("ERROR: loading video failed");
-			e.printStackTrace();
-			return false;
-		}
-	}
-	
-	/**
-	 * Get the language based on the user
-	 * 
-	 * @return language found
-	 */
-	public String getLanguage() {
-		String language = "en";
-		if (getUser().equals("rbb")) {
-			language = "de";
-		}
-		return language;
 	}
 }
 

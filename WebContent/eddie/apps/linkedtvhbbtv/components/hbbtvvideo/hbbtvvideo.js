@@ -267,12 +267,12 @@ function stopVideo() {
  * @param options
  * @returns {___anonymous_self}
  */
-function Video(options) {
+function Hbbtvvideo(options) {
 	self = {};
 	var settings = {};
 	$.extend(settings, options);
 	var myPlayer = document.getElementById("video_1");
-	setInterval((function(){eddie.putLou('','timeupdate('+Math.floor(myPlayer.currentTime)+':'+Math.floor(myPlayer.duration)+')');}), 1000);
+	setInterval((function(){var position = isNaN(myPlayer.playPosition) ? 0 : myPlayer.playPosition; var duration = isNaN(myPlayer.playTime) ? 0 : myPlayer.playTime; eddie.putLou('','timeupdate('+Math.floor(position)+':'+Math.floor(duration)+')');}), 1000);
 
 	self.putMsg = function(msg) {
 	    var myPlayer = document.getElementById("video_1");
@@ -325,7 +325,7 @@ function Video(options) {
 				case 'setPoster':
 					self.setPoster(content);
 				default:
-					alert('unhandled msg in video.html : '+msg+' ('+command+','+content+')'); 
+					alert('unhandled msg in hbbtvvideo.html : '+msg+' ('+command+','+content+')'); 
 			}
 		}
 	}
@@ -341,9 +341,7 @@ function Video(options) {
 	}
 	
 	self.handlePlay = function() {
-		myPlayer.volume=1;
-        myPlayer.playbackRate=1;
-        myPlayer.play();
+		document.getElementById('video_1').play(1);
 		eddie.putLou('notification','show(play)');
 	}
 
@@ -369,7 +367,7 @@ function Video(options) {
 	}
 	
 	self.setVideo = function(video) {
-		$("#src1").attr("data", video);		
+		$("#video_1").attr("data", video);		
 	}
 	
 	self.setPoster = function(poster) {
@@ -422,9 +420,6 @@ function Video(options) {
 					eddie.putLou("hbbtvvideo", "qrcode(toggle)");
 					break;
 		}
-	}
-	
+	}	
 	return self;
-	
-
 }
