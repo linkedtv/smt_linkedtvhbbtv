@@ -172,7 +172,7 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 			// s.putMsg("logo", "", "broadcaster(" +presentation.getUser()+")");
 		} else {
 			loadContent(s, "hbbtvvideo");
-			this.componentmanager.getComponent("hbbtvvideo").put("app", "setVideo("+ episode.getStreamUri() +")");
+			this.componentmanager.getComponent("hbbtvvideo").put("app", "setVideo("+ episode.getStreamuri(3) +")");
 			//this.componentmanager.getComponent("hbbtvvideo").put("app", "setPoster("+ episode.getStillsUri() +"/h/0/m/0/sec1.jpg)");
 			this.componentmanager.getComponent("hbbtvvideo").put("app", "play()");
 		}		
