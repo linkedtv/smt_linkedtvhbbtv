@@ -151,6 +151,7 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 			this.componentmanager.getComponent("hbbtvvideo").put("app", "setVideo("+ episode.getStreamuri(3) +")");
 			//this.componentmanager.getComponent("hbbtvvideo").put("app", "setPoster("+ episode.getStillsUri() +"/h/0/m/0/sec1.jpg)");
 			this.componentmanager.getComponent("hbbtvvideo").put("app", "play()");
+			loadContent(s, "overlay"); // this is just for testing, remove it later!
 		}		
 	}
 	
