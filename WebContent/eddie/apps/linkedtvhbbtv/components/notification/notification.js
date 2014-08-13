@@ -68,7 +68,7 @@ var Notification = function(options){
 	
 	self.show = function(line) {
 		$('#notificationshort').html(line);
-        $('#notificationshort').animate({top:'10px'},400,function() { self.animDone('in'); });
+        $('#notificationshort').animate({top:'80px'},400,function() { self.animDone('in'); });
 	}
 
 	self.showLong = function(line) {
@@ -82,7 +82,7 @@ var Notification = function(options){
 	
 	self.animDone = function(step) {
 		if (step=='in') {
-        	$('#notificationshort').animate({top:'10px'},1000,function() { self.animDone('out'); });
+        	$('#notificationshort').animate({top:'80px'},1000,function() { self.animDone('out'); });
 		} else if (step=='out') {
         	$('#notificationshort').animate({top:'-40px'},400,function() { self.animDone('done'); });
 		}

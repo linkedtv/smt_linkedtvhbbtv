@@ -222,33 +222,33 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	public void putOnScreen(Screen s,String from,String msg) {
         int pos = msg.indexOf("(");
         if (pos!=-1) {
-                String command = msg.substring(0,pos);
-                String content = msg.substring(pos+1,msg.length()-1);
-                if (command.equals("orientationchange")) {
-                	handleOrientationChange(s,content);
-                } else if (command.equals("timeupdate")) {
-                	handleTimeupdate(s,content);
-                } else if (command.equals("gesture")) {
-                	handleGesture(s,content);
-                } else if (command.equals("loaddata")) {
-                	handleLoadData(s,content);
-                } else if (command.equals("loadscreen")) {
-                	handleLoadScreen(s,content);
-                } else if (command.equals("loadblockdata")) {
-                	handleLoadBlockData(s,content);
-                } else if(command.equals("started")){
-					started();
-				}else if(command.equals("stopped")){
-					stopped();
-				} else if (command.equals("loadfakeusers")) {
-                	handleLoadFakeUsers(s);
-                } else if (command.equals("bookmark")) {
-                	handleBookmark(s,content);
-                } else if (command.equals("share")) {
-                	handleShare(s,content);
-                } else {
-                	super.putOnScreen(s, from, msg);
-                }
+        	String command = msg.substring(0,pos);
+            String content = msg.substring(pos+1,msg.length()-1);
+            if (command.equals("orientationchange")) {
+                handleOrientationChange(s,content);
+            } else if (command.equals("timeupdate")) {
+                handleTimeupdate(s,content);
+            } else if (command.equals("gesture")) {
+                handleGesture(s,content);
+            } else if (command.equals("loaddata")) {
+                handleLoadData(s,content);
+            } else if (command.equals("loadscreen")) {
+                handleLoadScreen(s,content);
+            } else if (command.equals("loadblockdata")) {
+                handleLoadBlockData(s,content);
+            } else if(command.equals("started")){
+				started();
+			}else if(command.equals("stopped")){
+				stopped();
+			} else if (command.equals("loadfakeusers")) {
+				handleLoadFakeUsers(s);
+            } else if (command.equals("bookmark")) {
+            	handleBookmark(s,content);
+            } else if (command.equals("share")) {
+            	handleShare(s,content);
+            } else {
+            	super.putOnScreen(s, from, msg);
+            }
         }
 	}
 	

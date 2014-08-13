@@ -38,7 +38,7 @@ $('.fakeuser').hammer({
 		if (con=="user_nina") { eddie.putLou("login", "login(nina,nina12)");}
 		
 		// ugly but o well
-		$('#toplogin_img').attr('src','/eddie/img/people/'+con.substring(5)+'.png');
+		$('#toplogin_img').attr('src','/eddie/apps/linkedtvhbbtv/img/people/'+con.substring(5)+'.png');
 		$('#toplogin').css({opacity: "0.9"});
 	}
 });
