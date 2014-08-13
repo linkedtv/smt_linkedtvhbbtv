@@ -114,6 +114,10 @@ public class Slider {
 			System.out.println("timeline appears to be empty!");
 		}
 		
+		if (timeline.getFsNodesByType("person") == null) {
+			return body;
+		}
+		
 		for(Iterator<FsNode> iter = timeline.getFsNodesByType("person"); iter.hasNext(); ) {
 			FsNode node = (FsNode)iter.next();
 			
@@ -156,6 +160,10 @@ public class Slider {
 		if (timeline == null) {
 			System.out.println("timeline appears to be empty!");
 		} 
+		
+		if (timeline.getFsNodesByType("object") == null) {
+			return body;
+		}
 		
 		for(Iterator<FsNode> iter = timeline.getFsNodesByType("object"); iter.hasNext(); ) {
 			FsNode node = (FsNode)iter.next();
@@ -200,6 +208,10 @@ public class Slider {
 			System.out.println("timeline appears to be empty!");
 		} 
 		
+		if (timeline.getFsNodesByType("location") == null) {
+			return body;
+		}
+		
 		for(Iterator<FsNode> iter = timeline.getFsNodesByType("location"); iter.hasNext(); ) {
 			FsNode node = (FsNode)iter.next();
 			
@@ -241,6 +253,10 @@ public class Slider {
 		if (timeline == null) {
 			System.out.println("timeline appears to be empty!");
 		} 
+		
+		if (timeline.getFsNodesByType("chapter") == null) {
+			return body;
+		}
 		
 		for(Iterator<FsNode> iter = timeline.getFsNodesByType("chapter"); iter.hasNext(); ) {
 			FsNode node = (FsNode)iter.next();
@@ -534,22 +550,22 @@ public class Slider {
 			User u = um.getUser(name);
 			if (name.equals("bert")) {
 				body += "<div class=\"sliderblock joined\" id=\"joined_block3\">";
-				body+="<img class=\"sliderimg\" src=\"/eddie/img/people/bert.png\"  />";
+				body+="<img class=\"sliderimg\" src=\"/eddie/apps/linkedtvhbbtv/img/people/bert.png\"  />";
 				body+="<div class=\"timecode brownt\">5m</div>";
 				body+="<div class=\"overlay\"><p>Bert</p></div></div>";
 			} else if (name.equals("anne")) {
 				body += "<div class=\"sliderblock joined\" id=\"joined_block1\">";
-				body+="<img class=\"sliderimg\" src=\"/eddie/img/people/anne.png\"  />";
+				body+="<img class=\"sliderimg\" src=\"/eddie/apps/linkedtvhbbtv/img/people/anne.png\"  />";
 				body+="<div class=\"timecode brownt\">10m</div>";
 				body+="<div class=\"overlay\"><p>Anne</p></div></div>";
 			} else if (name.equals("ralph")) {
 				body += "<div class=\"sliderblock joined\" id=\"joined_block2\">";
-				body+="<img class=\"sliderimg\" src=\"/eddie/img/people/ralph.png\"  />";
+				body+="<img class=\"sliderimg\" src=\"/eddie/apps/linkedtvhbbtv/img/people/ralph.png\"  />";
 				body+="<div class=\"timecode brownt\">7m</div>";
 				body+="<div class=\"overlay\"><p>Ralph</p></div></div>";
 			} else if (name.equals("nina")) {
 				body += "<div class=\"sliderblock joined\" id=\"joined_block4\">";
-				body+="<img class=\"sliderimg\" src=\"/eddie/img/people/nina.png\"  />";
+				body+="<img class=\"sliderimg\" src=\"/eddie/apps/linkedtvhbbtv/img/people/nina.png\"  />";
 				body+="<div class=\"timecode brownt\">2m</div>";
 				body+="<div class=\"overlay\"><p>Nina</p></div></div>";
 			}
@@ -567,28 +583,28 @@ public class Slider {
 	public static String loadDataChat(LinkedtvhbbtvApplication parent,FsTimeLine timeline) {
 		String body = "";
 		body += "<div class=\"sliderblock chat\" id=\"chat_block1\">";
-		body+="<img class=\"sliderimg\" src=\"/eddie/img/people/rutger.png\"  />";
+		body+="<img class=\"sliderimg\" src=\"/eddie/apps/linkedtvhbbtv/img/people/rutger.png\"  />";
 		body+="<div class=\"timecode redt\">3:10</div>";
 		body+="<div class=\"overlay\"><p>Rutger: Nice example</p></div></div>";
 
 		body += "<div class=\"sliderblock chat\" id=\"chat_block2\">";
-		body+="<img class=\"sliderimg\" src=\"/eddie/img/people/david.png\"  />";
+		body+="<img class=\"sliderimg\" src=\"/eddie/apps/linkedtvhbbtv/img/people/david.png\"  />";
 		body+="<div class=\"timecode redt\">2:13</div>";
 		body+="<div class=\"overlay\"><p>David: Hello anyone here ?</p></div></div>";
 
 		body += "<div class=\"sliderblock chat\" id=\"chat_block3\">";
-		body+="<img class=\"sliderimg\" src=\"/eddie/img/people/david.png\"  />";
+		body+="<img class=\"sliderimg\" src=\"/eddie/apps/linkedtvhbbtv/img/people/david.png\"  />";
 		body+="<div class=\"timecode redt\">1:04</div>";
 		body+="<div class=\"overlay\"><p>David: I have seen better</p></div></div>";
 
 		body += "<div class=\"sliderblock chat\" id=\"chat_block4\">";
-		body+="<img class=\"sliderimg\" src=\"/eddie/img/people/daniel.png\"  />";
+		body+="<img class=\"sliderimg\" src=\"/eddie/apps/linkedtvhbbtv/img/people/daniel.png\"  />";
 		body+="<div class=\"timecode redt\">55</div>";
 		body+="<div class=\"overlay\"><p>Daniel: I agree with Rutger</p></div></div>";	
 
 		
 		body += "<div class=\"sliderblock chat\" id=\"chat_block5\">";
-		body+="<img class=\"sliderimg\" src=\"/eddie/img/people/kati.png\"  />";
+		body+="<img class=\"sliderimg\" src=\"/eddie/apps/linkedtvhbbtv/img/people/kati.png\"  />";
 		body+="<div class=\"timecode redt\">20</div>";
 		body+="<div class=\"overlay\"><p>Kati: Are there more episodes ?</p></div></div>";
 		return body;

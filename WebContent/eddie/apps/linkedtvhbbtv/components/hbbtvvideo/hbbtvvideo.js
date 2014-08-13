@@ -54,9 +54,9 @@ function init() {
 
 /*initialize the player site*/
 function initPlayer() {
-    video = document.getElementById("video");
-    video.play(1);
-    /*  check the simple version first; 
+	video = document.getElementById("video_1");
+	video.play(1);
+	/*  check the simple version first; 
     try {
         var appManager = document.getElementById("applicationManager");
         currentApp = appManager.getOwnerApplication(document);
@@ -231,35 +231,39 @@ function toggleApps() {
 
 /*AV Control embedded object -> play()*/
 function playVideo() {
-    document.getElementById('play').focus();
+	eddie.putLou("hbbtvvideo", "play()");
+    /*document.getElementById('play').focus();
     try {
         video.play(1);
     }
     catch(e) {
         document.getElementById('info').innerHTML = 'video.play(1) not available in this browser';
-    }
+    }*/
 }
 
 /*AV Control embedded object -> pause()*/
 function pauseVideo() {
-    document.getElementById('pause').focus();
+	eddie.putLou("hbbtvvideo", "pause()");
+	/*document.getElementById('pause').focus();
     try {
         video.play(0);
     }
     catch(e) {
         document.getElementById('info').innerHTML = 'video.play(0) not available in this browser';
-    }
+    }*/
 }
 
 /*AV Control embedded object -> stop()*/
 function stopVideo() {
-    document.getElementById('stop').focus();
+	eddie.putLou("hbbtvvideo", "pause()");
+	eddie.putLou("hbbtvvideo", "seek(0)");
+	/*document.getElementById('stop').focus();
     try {
         video.stop();
     }
     catch(e) {
         document.getElementById('info').innerHTML = 'video.stop() not available in this browser';
-    }
+    }*/
 }
 	
 /*************************************************************************************************
@@ -271,11 +275,9 @@ function Hbbtvvideo(options) {
 	self = {};
 	var settings = {};
 	$.extend(settings, options);
-	var myPlayer = document.getElementById("video_1");
-	setInterval((function(){var position = isNaN(myPlayer.playPosition) ? 0 : myPlayer.playPosition; var duration = isNaN(myPlayer.playTime) ? 0 : myPlayer.playTime; eddie.putLou('','timeupdate('+Math.floor(position)+':'+Math.floor(duration)+')');}), 1000);
+	setInterval((function(){var position = isNaN(document.getElementById("video_1").playPosition) ? 0 : document.getElementById("video_1").playPosition; var duration = isNaN(document.getElementById("video_1").playTime) ? 0 : document.getElementById("video_1").playTime; eddie.putLou('','timeupdate('+Math.floor(position/1000)+':'+Math.floor(duration/1000)+')');}), 1000);
 
 	self.putMsg = function(msg) {
-	    var myPlayer = document.getElementById("video_1");
 		try{
 			var command = [msg.target[0].class];
 		}catch(e){
@@ -293,37 +295,12 @@ function Hbbtvvideo(options) {
 				case 'seek':
 					self.handleSeek(content);
 					break;
-				case 'mute':
-					myPlayer.volume=0;
-					break;
-				case 'volumeup':
-					myPlayer.volume+=0.1;
-					break;
-		        case 'volumedown':
-		            myPlayer.volume-=0.1;
-		            break;
-		        case 'volume':
-		            myPlayer.volume=eval(content);
-		            break;
-				case 'speed':
-					self.handleSpeed(content);
-		            break;
-				case 'request_videosrc':
-					eddie.putLou('controller','videosrc('+window.videosrc+')');
-					break;
 				case 'qrcode':
 					 video_toggleQRCode();
 					break;
-				case 'notify':
-					break;
-				case 'buttonClicked':
-					console.log('buttonClicked');
-					handleButtonClick(content);
-					break;
 				case 'setVideo':
 					self.setVideo(content);
-				case 'setPoster':
-					self.setPoster(content);
+					break;
 				default:
 					alert('unhandled msg in hbbtvvideo.html : '+msg+' ('+command+','+content+')'); 
 			}
@@ -341,37 +318,25 @@ function Hbbtvvideo(options) {
 	}
 	
 	self.handlePlay = function() {
-		document.getElementById('video_1').play(1);
+		document.getElementById("video_1").play(1);
 		eddie.putLou('notification','show(play)');
 	}
 
 	self.handlePause = function() {
-		myPlayer.pause();
+		document.getElementById("video_1").play(0);
 		eddie.putLou('notification','show(pause)');
 	}
 
 	self.handleSeek = function(content) {
-		var time = eval(content);
+		var ms = parseFloat(content)*1000;
+		var time = parseInt(ms);
 		if (time>1) time = time - 1 ;
-		myPlayer.currentTime = time;
+		document.getElementById("video_1").seek(time);
 		eddie.putLou('notification','show(seek '+Math.floor(time)+')');
-	}
-
-	self.handleSpeed = function(content){
-		myPlayer.volume=0;
-		if (content=="" || content=="1") {
-			content = "1";
-			myPlayer.volume=1;
-		}
-        myPlayer.playbackRate=eval(content);
 	}
 	
 	self.setVideo = function(video) {
 		$("#video_1").attr("data", video);		
-	}
-	
-	self.setPoster = function(poster) {
-		$("#video_1").attr("poster", poster);
 	}
 
 	handleButtonClick = function(content){
@@ -399,7 +364,7 @@ function Hbbtvvideo(options) {
 					break;
 				case 'stop':
 					eddie.putLou("hbbtvvideo", "pause()");
-					eddie.putLou("hbbtvvideo", "seek(0)")
+					eddie.putLou("hbbtvvideo", "seek(0)");
 					break;
 				case 'volumeup':
 					eddie.putLou("hbbtvvideo", "volumeup()");

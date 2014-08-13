@@ -22,14 +22,9 @@
 
 package org.springfield.lou.application.types;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.dom4j.Document;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
-import org.dom4j.Node;
 import org.springfield.lou.application.Html5Application;
 import org.springfield.lou.application.components.BasicComponent;
 import org.springfield.lou.application.components.ComponentInterface;
@@ -39,7 +34,6 @@ import org.springfield.lou.screen.Capabilities;
 import org.springfield.lou.screen.Screen;
 import org.springfield.lou.tools.FsFileReader;
 import org.springfield.lou.user.User;
-import org.springfield.mojo.http.HttpHelper;
 import org.springfield.mojo.linkedtv.Episode;
 import org.springfield.mojo.linkedtv.GAIN;
 
@@ -70,7 +64,6 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	public FsTimeLine timeline = null;
 	private enum sliders { whoslider,whatslider,whereslider,chapterslider,bookmarkslider,sharedslider, joinedslider; }
 	private enum blocks { who,what,where,chapter; }
-	private boolean curated = false;
 	private int currentChapter = -1;
 	private long currentTime = 0l;
 	private boolean hbbtvMode = false; 
@@ -96,11 +89,11 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	 * 
 	 * @param s - screen
 	 */
-	public void onNewScreen(Screen s) {
-		episode = new Episode(s.getParameter("id"));
+	public void onNewScreen(Screen s) {		
 		String fixedrole = s.getParameter("role");
-		
-		this.curated = s.getParameter("curated") == null ? false : true;
+		if (episode == null) {
+			episode = new Episode(s.getParameter("id"));
+		}
 		
 		// so we want to load based on device type
 		Capabilities caps = s.getCapabilities();
@@ -126,23 +119,11 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 			System.out.println("Second screen");
 			loadSecondScreen(s);
 			
-			if (this.curated == true) {
-				if (timeline == null) {
-					timeline = new FsTimeLine();
-				}
-				timeline.removeNodes();
-				FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", episode.getMediaResourceId(), episode.getStreamUri(), episode.getStillsUri(), true);
-				timeline.addNodes(tags.getAllNodes());					
-			} else {
-				if (timeline == null) {
-					timeline = new FsTimeLine();
-				}
-				timeline.removeNodes();
-				FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", episode.getMediaResourceId(), episode.getStreamUri(), episode.getStillsUri(), false);
-				timeline.addNodes(tags.getAllNodes());
-			}				
+			if (timeline == null) {
+				initTimeLine();				
+			}										
 		} else {
-			// this is the main screen
+			// this is the a non HbbTV main screen
 			// reset for screens that might have run in the past?
 			currentTime = 0l;			
 			
@@ -163,13 +144,8 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		// switch between HTML5 version and HbbTV version
 		if (hbbtvMode == false) {
 			loadContent(s, "video");
-			// loadContent(s, "connectinfo");
-			// loadContent(s, "logo");
-			// loadContent(s, "terms");
 			this.componentmanager.getComponent("video").put("app", "setVideo("+ episode.getStreamUri() +")");
 			this.componentmanager.getComponent("video").put("app", "setPoster("+ episode.getStillsUri() +"/h/0/m/0/sec1.jpg)");
-			// s.putMsg("terms", "", "show()");
-			// s.putMsg("logo", "", "broadcaster(" +presentation.getUser()+")");
 		} else {
 			loadContent(s, "hbbtvvideo");
 			this.componentmanager.getComponent("hbbtvvideo").put("app", "setVideo("+ episode.getStreamuri(3) +")");
@@ -306,11 +282,9 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	 * @param content - slider to load
 	 */
 	private void handleLoadData(Screen s,String content) {
-		if (timeline==null) {
-			timeline = new FsTimeLine();
-			FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", episode.getMediaResourceId(), episode.getStreamUri(), episode.getStillsUri(), this.curated);
-			timeline.addNodes(tags.getAllNodes());
-		}
+		if (timeline == null) {
+			initTimeLine();				
+		}	
 
 		float chapterStart = 0f;
 		float chapterDuration = 0f;
@@ -365,6 +339,7 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		gain.user_select(s.getUserName(), params[1], s.getId());
 		
 		String type = params[0].substring(0,params[0].indexOf("_"));
+		String id = params[0].substring(params[0].indexOf("_")+6); //compensate for '_block'
 		String uid = params[1].substring(params[1].lastIndexOf("/")+1);
 		String orientation = params[2];
 		String entity = params[3];
@@ -374,7 +349,19 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		String body = "";
 		String color = "";
 		System.out.println("ENTITY = "+entity+" DESCRIPTION = "+description);
-		List<Element> enrichments = FSHelper.getEnrichment("linkedtv", uid);
+		
+		String fsType = type;
+		if (type.equals("what")) {
+			fsType = "object";
+		} else if (type.equals("who")) {
+			fsType = "person";
+		} else if (type.equals("where")) {
+			fsType = "location";
+		}
+		
+		FsNode annotation = timeline.getFsNodeById(fsType, Integer.parseInt(id));
+		FSList enrichmentsList = episode.getEnrichmentsFromAnnotation(annotation);
+		List<FsNode> enrichments = enrichmentsList.getNodes();
 		
 		try {
 			switch (blocks.valueOf(type)) {
@@ -389,7 +376,7 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		
 		if (orientation.equals("portrait")) {
 			if (enrichments.size() == 1) {
-				body += "<iframe id=\"ext_inf\" src=\""+enrichments.get(0).valueOf("properties/locator")+"\"></iframe>";
+				body += "<iframe id=\"ext_inf\" src=\""+enrichments.get(0).getProperty("locator")+"\"></iframe>";
 			} else {			
 				//String lang = presentation.getLanguage();
 				String lang = "de";
@@ -404,12 +391,11 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 			body += "<p id=\"info_description\">"+description+"</p>";
 			body += "<p class=\"info_text_1\">FIND OUT MORE</p>";
 			body += "<div>";
-			for (Iterator<Element> i = enrichments.iterator(); i.hasNext(); ) {
-				Element enrichment = (Element) i.next();
-				body += "<a href=\""+enrichment.valueOf("properties/locator")+"\">";
-				body += enrichment.valueOf("properties/type");
-				if (!enrichment.valueOf("properties/source").equals("")) {
-					body += "-"+enrichment.valueOf("properties/source");
+			for (FsNode enrichment : enrichments) {
+				body += "<a href=\""+enrichment.getProperty("locator")+"\">";
+				body += enrichment.getProperty("type");
+				if (!enrichment.getProperty("source").equals("")) {
+					body += "-"+enrichment.getProperty("source");
 				}
 				body += "</a><br/>";
 			}
@@ -433,13 +419,10 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	 * @param s - screen
 	 * @param content - video time
 	 */
-	private void handleTimeupdate(Screen s,String content) {
-		if (timeline==null) {
-			System.out.println("Timeline is empty, make new one");
-			timeline = new FsTimeLine();
-			FsTimeTagNodes tags = FSHelper.getTagNodes("linkedtv", episode.getMediaResourceId(), episode.getStreamUri(), episode.getStillsUri(), this.curated);
-			timeline.addNodes(tags.getAllNodes());
-		}
+	private void handleTimeupdate(Screen s,String content) {		
+		if (timeline == null) {
+			initTimeLine();				
+		}	
 		
 		String[] t = content.split(":");
 		long ms = Long.parseLong(t[0])*1000;
@@ -457,7 +440,6 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 			}
 			chapterStart = timeline.getCurrentFsNode("chapter", ms).getStarttime();
 			chapterDuration = timeline.getCurrentFsNode("chapter", ms).getDuration();
-			System.out.println("Setting chapter start and duration to "+chapterStart+" "+chapterDuration);
 		}
 
 		comp = getComponentManager().getComponent("whoslider");
@@ -756,126 +738,36 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	 * @param s - screen
 	 */
 	private void handleLoadFakeUsers(Screen s) {
-		String body = "<table><tr><td><div class=\"fakeuser\" id=\"user_bert\"><p>Bert</p><img src=\"/eddie/img/people/bert.png\"></div>";
-		body += "</td><td><div class=\"fakeuser\" id=\"user_anne\"><p>Anne</p><img src=\"/eddie/img/people/anne.png\"></div>";
-		body += "</td><td><div class=\"fakeuser\" id=\"user_ralph\"><p>Ralph</p><img src=\"/eddie/img/people/ralph.png\"></div>";
-		body += "</td></tr><tr><tr><td><div class=\"fakeuser\" id=\"user_nina\"><p>Nina</p><img src=\"/eddie/img/people/nina.png\"></div></td></tr></table>";
+		String body = "<table><tr><td><div class=\"fakeuser\" id=\"user_bert\"><p>Bert</p><img src=\"/eddie/apps/linkedtvhbbtv/img/people/bert.png\"></div>";
+		body += "</td><td><div class=\"fakeuser\" id=\"user_anne\"><p>Anne</p><img src=\"/eddie/apps/linkedtvhbbtv/img/people/anne.png\"></div>";
+		body += "</td><td><div class=\"fakeuser\" id=\"user_ralph\"><p>Ralph</p><img src=\"/eddie/apps/linkedtvhbbtv/img/people/ralph.png\"></div>";
+		body += "</td></tr><tr><tr><td><div class=\"fakeuser\" id=\"user_nina\"><p>Nina</p><img src=\"/eddie/apps/linkedtvhbbtv/img/people/nina.png\"></div></td></tr></table>";
 		s.putMsg("tablet","app", "fakeusershtml("+body+")");
 		s.loadScript("tablet", "tablet/fakeuserevents.js", this);
 	}
-}
-
-/**
- * Helper class to retrieve the entities from the LinkedTV system through Maggie (in fsxml)
- * 
- * @author Pieter van Leeuwen
- * @copyright Copyright: Noterik B.V. 2013
- * @package org.springfield.lou.application.types
- *
- */
-final class FSHelper {
-	//TODO: fugly
-	private static String FS_SERVER = "http://player2.noterik.com/maggie/";
-	
-	public FSHelper() { }
 	
 	/**
-	 * Get entities for the given media resource id
-	 * 
-	 * @param domain - the domain the presentation is in
-	 * @param mediaResourceId - the media resource id of the video
-	 * @param path - the path 
-	 * @param imageBasePath - the image path
-	 * @param curated - curated version or not
-	 * @return FsTimeTagNodes
+	 * Initialize timeline with annotations and chapters
 	 */
-	public static FsTimeTagNodes getTagNodes(String domain, String mediaResourceId, String path, String imageBasePath, boolean curated) {
+	private void initTimeLine() {
+		timeline = new FsTimeLine();
+		
+		timeline.removeNodes();
+		
 		FsTimeTagNodes results = new FsTimeTagNodes();
-	
-		String uri = FS_SERVER+"?domain="+domain+"&id="+mediaResourceId+"&annotations";
-		if (curated) {
-			System.out.println("Curated request");
-			uri += "&curated&renew";
+		
+		FSList annotationsList = episode.getAnnotations();
+		List<FsNode> annotations = annotationsList.getNodes();	
+		for (FsNode annotation : annotations) {
+			results.addNode(annotation);
 		}
 		
-		String data = HttpHelper.sendRequest("GET", uri, null, null).getResponse();
-		System.out.println("data = "+data);
-		try {
-			Document response = DocumentHelper.parseText(data);
-			List<Node> annotations = response.selectNodes("//annotations/*");
-			System.out.println("number of childs:"+annotations.size());
-			for (Iterator<Node> i = annotations.iterator(); i.hasNext(); ) {
-				Element annotation = (Element) i.next();
-				FsNode node = new FsNode();
-				node.setName(annotation.getName());
-				node.setId(annotation.attribute("id").getText());
-				node.setPath(path+"/"+node.getName()+"/"+node.getId());
-				node.setImageBaseUri(imageBasePath);
-				List<Node> properties = annotation.selectNodes("properties/*");
-				for (Iterator<Node> j = properties.iterator(); j.hasNext(); ) {
-					Element property = (Element) j.next();
-					node.setProperty(property.getName(), property.getText());
-				}
-				results.addNode(node);
-			}					
-		} catch (Exception e) {
-			System.out.println("Error in parsing nodes from maggie");
-		}
-		data = HttpHelper.sendRequest("GET", FS_SERVER+"?domain="+domain+"&id="+mediaResourceId+"&chapters", null, null).getResponse();
-		System.out.println("data from chapters = "+data);
-		try {
-			Document response = DocumentHelper.parseText(data);
-			List<Node> chapters = response.selectNodes("//chapters/*");
-			System.out.println("number of childs:"+chapters.size());
-			for (Iterator<Node> i = chapters.iterator(); i.hasNext(); ) {
-				Element chapter = (Element) i.next();
-
-				FsNode node = new FsNode();
-				node.setName(chapter.getName());
-				node.setId(chapter.attribute("id").getText());
-				node.setPath(path+"/"+node.getName()+"/"+node.getId());
-				node.setImageBaseUri(imageBasePath);
-				List<Node> properties = chapter.selectNodes("properties/*");
-				for (Iterator<Node> j = properties.iterator(); j.hasNext(); ) {
-					Element property = (Element) j.next();
-					node.setProperty(property.getName(), property.getText());
-				}
-				results.addNode(node);
-			}					
-		} catch (Exception e) {
-			System.out.println("Error in parsing nodes from maggie");
+		FSList chaptersList = episode.getChapters();
+		List<FsNode> chapters = chaptersList.getNodes();	
+		for (FsNode chapter : chapters) {
+			results.addNode(chapter);
 		}
 		
-		System.out.println("current ammount of annotations = "+results.size());
-		return results;
-	}
-	
-	/**
-	 * Get list of enrichments for the given entity
-	 * 
-	 * @param domain - the current domain
-	 * @param entityId - the entity id
-	 * @return List of enrichment elements
-	 */
-	public static List<Element> getEnrichment(String domain, String entityId) {
-		String uri = FS_SERVER+"?domain="+domain+"&id="+entityId+"&enrichments";		
-		System.out.println("Getting enrichment "+entityId+" ("+uri+")");
-		String data = HttpHelper.sendRequest("GET", uri, null, null).getResponse();
-		List<Element> results = null;
-		
-		try {
-			Document response = DocumentHelper.parseText(data);
-			List<Node> enrichments = response.selectNodes("//enrichments/*");
-			System.out.println("number of childs:"+enrichments.size());
-			results = new ArrayList<Element>(enrichments.size());
-			for (Iterator<Node> i = enrichments.iterator(); i.hasNext(); ) {
-				Element enrichment = (Element) i.next();				
-				results.add(enrichment);
-			}					
-		} catch (Exception e) {
-			System.out.println("Error in parsing nodes from maggie");
-		}
-		return results;
+		timeline.addNodes(results.getAllNodes());
 	}
 }
-

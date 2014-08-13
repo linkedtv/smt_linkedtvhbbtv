@@ -140,6 +140,7 @@ springfield_function Sliderevents(options){
 						var	referid = $('#'+tid).attr("data-referid");
 						if (settings.droptarget=="mainscreens") {
 							eddie.putLou('video', 'seek(' + timepoint + ')');
+							eddie.putLou('hbbtvvideo', 'seek(' + timepoint + ')');
 						} else if (settings.droptarget=="bookmarks") {
 							eddie.putLou('', 'bookmark('+timepoint+','+tid+','+referid+')');
 						} else {
