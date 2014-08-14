@@ -319,11 +319,15 @@ function Hbbtvvideo(options) {
 	
 	self.handlePlay = function() {
 		document.getElementById("video_1").play(1);
+		var position = isNaN(document.getElementById("video_1").playPosition) ? 0 : document.getElementById("video_1").playPosition;
+		eddie.putLou('', 'started('+position+')');
 		eddie.putLou('notification','show(play)');
 	}
 
 	self.handlePause = function() {
 		document.getElementById("video_1").play(0);
+		var position = isNaN(document.getElementById("video_1").playPosition) ? 0 : document.getElementById("video_1").playPosition;
+		eddie.putLou('', 'paused('+position+')');
 		eddie.putLou('notification','show(pause)');
 	}
 

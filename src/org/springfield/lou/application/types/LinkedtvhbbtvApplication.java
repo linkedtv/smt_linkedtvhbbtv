@@ -22,6 +22,7 @@
 
 package org.springfield.lou.application.types;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -36,6 +37,7 @@ import org.springfield.lou.tools.FsFileReader;
 import org.springfield.lou.user.User;
 import org.springfield.mojo.linkedtv.Episode;
 import org.springfield.mojo.linkedtv.GAIN;
+import org.springfield.mojo.linkedtv.GAINObjectEntity;
 
 /**
  * LinkedTV HbbTV application based on LinkedTV Demo Application.
@@ -237,15 +239,19 @@ public class LinkedtvhbbtvApplication extends Html5Application {
             } else if (command.equals("loadblockdata")) {
                 handleLoadBlockData(s,content);
             } else if(command.equals("started")){
-				started();
+				started(s, content);
+			}else if (command.equals("paused")) {
+				paused(s, content);
 			}else if(command.equals("stopped")){
-				stopped();
+				stopped(s, content);
 			} else if (command.equals("loadfakeusers")) {
 				handleLoadFakeUsers(s);
             } else if (command.equals("bookmark")) {
             	handleBookmark(s,content);
             } else if (command.equals("share")) {
             	handleShare(s,content);
+            } else if (command.equals("infoblockfinished")) {
+            	handleInfoBlockFinished(s, content);
             } else {
             	super.putOnScreen(s, from, msg);
             }
@@ -485,6 +491,18 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 			}
 		}
 		currentChapter = newChapter;
+		
+		FsNode chapter = timeline.getCurrentFsNode("chapter", ms);
+		FSList annotationsList = episode.getAnnotationsFromChapter(chapter);
+		List<FsNode> annotations = annotationsList.getNodes();
+		List<GAINObjectEntity> entityList = new ArrayList<GAINObjectEntity>();
+		for (FsNode annotation : annotations) {
+			GAINObjectEntity entity = new GAINObjectEntity(annotation);
+			entityList.add(entity);
+		}
+		
+		gain.updateEntities(entityList);
+		gain.sendKeepAliveRequest();
 	}
 	
 	/**
@@ -592,6 +610,7 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		// set the changed capabilities
 		Capabilities caps = s.getCapabilities();
 		caps.addCapability("orientation", o); // set the new orientation
+		gain.screen_orientation(s.getId(), o);
 		
 		// reload the style sheet (should we not remove the old?)
 		String dstyle = caps.getDeviceModeName();
@@ -613,6 +632,7 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		}
 		User u = getUserManager().getUser(username);
 		if (u!=null) {
+			gain.user_bookmark(username, content, s.getId());
 			u.addBookmark(content);
 			s.putMsg("notification","app","show(bookmarked "+u.getBookmarks().size()+")");
 		}		
@@ -690,23 +710,37 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	/**
 	 * 
 	 */
-	private void started(){
+	private void started(Screen s, String videoTime){
 		if (hbbtvMode == false) {
 			this.componentmanager.getComponent("video").put("app", "started()");
 		} else {
 			this.componentmanager.getComponent("hbbtvvideo").put("app", "started()");
 		}
+		gain.player_play(s.getId(), episode.getMediaResourceId(), videoTime);
 	}
 	
 	/**
 	 * 
 	 */
-	private void stopped(){
+	private void paused(Screen s, String videoTime){
+		if (hbbtvMode == false) {
+			this.componentmanager.getComponent("video").put("app", "started()");
+		} else {
+			this.componentmanager.getComponent("hbbtvvideo").put("app", "started()");
+		}
+		gain.player_pause(s.getId(), episode.getMediaResourceId(), videoTime);
+	}
+	
+	/**
+	 * 
+	 */
+	private void stopped(Screen s, String videoTime){
 		if (hbbtvMode == false) {
 			this.componentmanager.getComponent("video").put("app", "stopped()");
 		} else {
 			this.componentmanager.getComponent("hbbtvvideo").put("app", "stopped()");
 		}
+		gain.player_stop(s.getId(), episode.getMediaResourceId(), videoTime);
 	}
 	
 	/*private void timeUpdate(String args){
@@ -770,5 +804,13 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		}
 		
 		timeline.addNodes(results.getAllNodes());
+	}
+	
+	private void handleInfoBlockFinished(Screen s, String params) {
+		System.out.println("Received info block finished with following params "+params);
+		String[] parameters = params.split(",");
+		if (parameters != null && parameters.length == 2) {
+			gain.user_viewtime(s.getUserName(), parameters[1], s.getId(), parameters[0]);
+		}
 	}
 }

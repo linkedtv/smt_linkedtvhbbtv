@@ -180,7 +180,13 @@ springfield_function Tablet(options){
 		} else if(event.type=='doubletap'){
 			if(components.tablet.getSettings().infoscreenopen==false) return;
 			components.tablet.getSettings().infoscreenopen=false;
+			var time = new Date().getTime() - $('#infoscreen').attr('data-timestamp');
+			var uid = $('#infoscreen').attr('data-uid')
+			$('#infoscreen').attr('data-timestamp', '');
+			$('#infoscreen').attr('data-uid', '');
 			$('#infoscreen').animate({opacity:'0'},400,function() { components.tablet.animDone("closeinfoscreen"); });
+			//signal back user has stopped reading infoscreen
+			eddie.putLou("","infoblockfinished("+time+","+uid+")");
 		}
 	}
 	

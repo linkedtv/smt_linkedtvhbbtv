@@ -106,6 +106,8 @@ springfield_function Sliderevents(options){
 						"visibility": "visible",
 						"opacity": "0"
 					}).animate({opacity:'1'},400,function() { components.tablet.animDone("openinfoscreen"); });
+					$('#infoscreen').attr("data-uid", uid);
+					$('#infoscreen').attr("data-timestamp", new Date().getTime());
 					break;
 				case "dragend":
 					self.externalDrag(event);

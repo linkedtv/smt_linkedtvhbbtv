@@ -98,11 +98,15 @@ function Video(options) {
 		myPlayer.volume=1;
         myPlayer.playbackRate=1;
         myPlayer.play();
+        var position = isNaN(myPlayer.currentTime) ? 0 : myPlayer.currentTime;
+		eddie.putLou('', 'started('+position+')');
 		eddie.putLou('notification','show(play)');
 	}
 
 	self.handlePause = function() {
 		myPlayer.pause();
+		var position = isNaN(myPlayer.currentTime) ? 0 : myPlayer.currentTime;
+		eddie.putLou('', 'paused('+position+')');
 		eddie.putLou('notification','show(pause)');
 	}
 
