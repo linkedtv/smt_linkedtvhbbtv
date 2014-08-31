@@ -27,7 +27,25 @@ function Video(options) {
 	$.extend(settings, options);
 	var myPlayer = document.getElementById("video_1");
 	setInterval((function(){eddie.putLou('','timeupdate('+Math.floor(myPlayer.currentTime)+':'+Math.floor(myPlayer.duration)+')');}), 1000);
-
+	
+	//get player events and propagate to application
+	myPlayer.addEventListener('play', function(e) {
+		var position = isNaN(myPlayer.currentTime) ? 0 : myPlayer.currentTime;
+		eddie.putLou('', 'started('+position+')');
+		eddie.putLou('notification','show(play)');
+	}, false);
+	
+	myPlayer.addEventListener('pause', function(e) {
+		var position = isNaN(myPlayer.currentTime) ? 0 : myPlayer.currentTime;
+		eddie.putLou('', 'paused('+position+')');
+		eddie.putLou('notification','show(pause)');
+	}, false);
+	
+	myPlayer.addEventListener('ended', function(e) {
+		var position = isNaN(myPlayer.currentTime) ? 0 : myPlayer.currentTime;
+		eddie.putLou('', 'stopped('+position+')');
+	}, false);
+	
 	self.putMsg = function(msg) {
 	    var myPlayer = document.getElementById("example_video_1");
 		try{
@@ -98,16 +116,16 @@ function Video(options) {
 		myPlayer.volume=1;
         myPlayer.playbackRate=1;
         myPlayer.play();
-        var position = isNaN(myPlayer.currentTime) ? 0 : myPlayer.currentTime;
-		eddie.putLou('', 'started('+position+')');
-		eddie.putLou('notification','show(play)');
+        //var position = isNaN(myPlayer.currentTime) ? 0 : myPlayer.currentTime;
+		//eddie.putLou('', 'started('+position+')');
+		//eddie.putLou('notification','show(play)');
 	}
 
 	self.handlePause = function() {
 		myPlayer.pause();
-		var position = isNaN(myPlayer.currentTime) ? 0 : myPlayer.currentTime;
-		eddie.putLou('', 'paused('+position+')');
-		eddie.putLou('notification','show(pause)');
+		//var position = isNaN(myPlayer.currentTime) ? 0 : myPlayer.currentTime;
+		//eddie.putLou('', 'paused('+position+')');
+		//eddie.putLou('notification','show(pause)');
 	}
 
 	self.handleSeek = function(content) {

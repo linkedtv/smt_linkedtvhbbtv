@@ -181,16 +181,19 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	public void onNewUser(Screen s,String name) {
 		super.onNewUser(s, name);
 		
-		gain.user_login(name, s.getId());
-		
-		String body = Slider.loadDataJoined(this,timeline);
-		ComponentInterface comp = getComponentManager().getComponent("joinedslider");
-		if (comp!=null) {
-			comp.put("app", "html("+body+")");
-		}
-		
-		comp = getComponentManager().getComponent("notification");
-		comp.put("app", "login("+name+")");
+		User u = getUserManager().getUser(name);
+		if (u!=null) {
+			gain.user_login("/domain/linkedtv/user/"+u.getId(), s.getId());
+			
+			String body = Slider.loadDataJoined(this,timeline);
+			ComponentInterface comp = getComponentManager().getComponent("joinedslider");
+			if (comp!=null) {
+				comp.put("app", "html("+body+")");
+			}
+			
+			comp = getComponentManager().getComponent("notification");
+			comp.put("app", "login("+name+")");
+		}	
 	}
 	
 	/** 
@@ -202,16 +205,19 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	public void onLogoutUser(Screen s,String name) {
 		super.onLogoutUser(s, name);
 		
-		gain.user_logout(name, s.getId());
-		
-		String body = Slider.loadDataJoined(this,timeline);
-		ComponentInterface comp = getComponentManager().getComponent("joinedslider");
-		if (comp!=null) {
-			comp.put("app", "html("+body+")");
-		}
-		comp = getComponentManager().getComponent("notification");
-		if (name!=null) {
-			comp.put("app", "logout("+name+")");
+		User u = getUserManager().getUser(name);
+		if (u!=null) {
+			gain.user_logout("/domain/linkedtv/user/"+u.getId(), s.getId());
+			
+			String body = Slider.loadDataJoined(this,timeline);
+			ComponentInterface comp = getComponentManager().getComponent("joinedslider");
+			if (comp!=null) {
+				comp.put("app", "html("+body+")");
+			}
+			comp = getComponentManager().getComponent("notification");
+			if (name!=null) {
+				comp.put("app", "logout("+name+")");
+			}
 		}
 	}
 	
@@ -344,7 +350,13 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 	private void handleLoadBlockData(Screen s,String content) {
 		String params[] = content.split(",");		
 		
-		gain.user_select(s.getUserName(), params[1], s.getId());
+		String username = "";
+		User u = getUserManager().getUser(s.getUserName());
+		if (u!=null) {
+			username = "/domain/linkedtv/user/"+u.getId();
+		}
+		
+		gain.user_select(username, params[1], s.getId());
 		
 		String type = params[0].substring(0,params[0].indexOf("_"));
 		String id = params[0].substring(params[0].indexOf("_")+6); //compensate for '_block'
@@ -497,9 +509,15 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		FSList annotationsList = episode.getAnnotationsFromChapter(chapter);
 		List<FsNode> annotations = annotationsList.getNodes();
 		List<GAINObjectEntity> entityList = new ArrayList<GAINObjectEntity>();
-		for (FsNode annotation : annotations) {
-			GAINObjectEntity entity = new GAINObjectEntity(annotation);
-			entityList.add(entity);
+		
+		//GAINObjectEntity chapterEntity = new GAINObjectEntity(chapter);
+		//entityList.add(chapterEntity);
+		
+		if (annotations != null) {
+			for (FsNode annotation : annotations) {
+				GAINObjectEntity entity = new GAINObjectEntity(annotation);
+				entityList.add(entity);
+			}
 		}
 		
 		gain.updateEntities(entityList);
@@ -633,7 +651,7 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		}
 		User u = getUserManager().getUser(username);
 		if (u!=null) {
-			gain.user_bookmark(username, content, s.getId());
+			gain.user_bookmark("/domain/linkedtv/user/"+u.getId(), content, s.getId());
 			u.addBookmark(content);
 			s.putMsg("notification","app","show(bookmarked "+u.getBookmarks().size()+")");
 		}		
@@ -811,7 +829,12 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		System.out.println("Received info block finished with following params "+params);
 		String[] parameters = params.split(",");
 		if (parameters != null && parameters.length == 2) {
-			gain.user_viewtime(s.getUserName(), parameters[1], s.getId(), parameters[0]);
+			String username = "";
+			User u = getUserManager().getUser(s.getUserName());
+			if (u!=null) {
+				username = "/domain/linkedtv/user/"+s.getUserName();
+			}
+			gain.user_viewtime(username, parameters[1], s.getId(), parameters[0]);
 		}
 	}
 }
