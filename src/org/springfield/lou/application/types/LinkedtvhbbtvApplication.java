@@ -510,8 +510,8 @@ public class LinkedtvhbbtvApplication extends Html5Application {
 		List<FsNode> annotations = annotationsList.getNodes();
 		List<GAINObjectEntity> entityList = new ArrayList<GAINObjectEntity>();
 		
-		//GAINObjectEntity chapterEntity = new GAINObjectEntity(chapter);
-		//entityList.add(chapterEntity);
+		GAINObjectEntity chapterEntity = new GAINObjectEntity(chapter);
+		entityList.add(chapterEntity);
 		
 		if (annotations != null) {
 			for (FsNode annotation : annotations) {
